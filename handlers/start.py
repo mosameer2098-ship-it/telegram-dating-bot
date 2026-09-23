@@ -1,3 +1,5 @@
+import random
+from pathlib import Path
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -57,6 +59,16 @@ def main_dashboard(language="en"):
     ])
 
 
+def get_random_welcome_photo():
+    folder = Path(__file__).resolve().parent.parent / "assets" / "welcome"
+    photos = sorted(folder.glob("*.jpg"))
+
+    if not photos:
+        return None
+
+    return random.choice(photos)
+
+
 def welcome_text(language="en"):
     if language == "hi":
         return (
@@ -101,11 +113,22 @@ async def start_command(
 
     context.user_data["language"] = language
 
-    await update.message.reply_text(
-        welcome_text(language),
-        reply_markup=main_dashboard(language),
-        parse_mode="HTML",
-    )
+    photo = get_random_welcome_photo()
+
+    if photo:
+        with photo.open("rb") as image:
+            await update.message.reply_photo(
+                photo=image,
+                caption=welcome_text(language),
+                reply_markup=main_dashboard(language),
+                parse_mode="HTML",
+            )
+    else:
+        await update.message.reply_text(
+            welcome_text(language),
+            reply_markup=main_dashboard(language),
+            parse_mode="HTML",
+        )
 
 
 async def language_command(
