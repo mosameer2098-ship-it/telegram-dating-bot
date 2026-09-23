@@ -15,11 +15,17 @@ from handlers.profile import (
     get_age,
     get_city,
     get_bio,
+    get_photo,
+    get_gender,
+    get_interested_in,
     cancel_profile,
     NAME,
     AGE,
     CITY,
     BIO,
+    PHOTO,
+    GENDER,
+    INTERESTED_IN,
 )
 
 
@@ -59,6 +65,24 @@ def main():
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
                     get_bio,
+                )
+            ],
+            PHOTO: [
+                MessageHandler(
+                    filters.PHOTO,
+                    get_photo,
+                )
+            ],
+            GENDER: [
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    get_gender,
+                )
+            ],
+            INTERESTED_IN: [
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    get_interested_in,
                 )
             ],
         },
