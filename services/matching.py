@@ -1,6 +1,3 @@
-
-import sqlite3
-
 from database import get_connection
 
 
@@ -32,9 +29,14 @@ def get_discover_profile(
         SELECT *
         FROM users
         WHERE telegram_id != ?
+          AND telegram_id NOT IN (
+              SELECT blocked_id
+              FROM blocked_users
+              WHERE blocker_id = ?
+          )
     """
 
-    params = [telegram_id]
+    params = [telegram_id, telegram_id]
 
     if gender:
         query += " AND gender = ?"
@@ -43,6 +45,16 @@ def get_discover_profile(
     if city:
         query += " AND city = ?"
         params.append(city)
+
+    query += """
+        AND telegram_id NOT IN (
+            SELECT liked_id
+            FROM likes
+            WHERE liker_id = ?
+        )
+    """
+
+    params.append(telegram_id)
 
     query += """
         ORDER BY RANDOM()
@@ -80,7 +92,7 @@ def add_like(liker_id, liked_id):
         SELECT id
         FROM likes
         WHERE liker_id = ?
-        AND liked_id = ?
+          AND liked_id = ?
         """,
         (liked_id, liker_id),
     ).fetchone()
@@ -115,7 +127,7 @@ def has_liked(liker_id, liked_id):
         SELECT id
         FROM likes
         WHERE liker_id = ?
-        AND liked_id = ?
+          AND liked_id = ?
         """,
         (liker_id, liked_id),
     ).fetchone()
