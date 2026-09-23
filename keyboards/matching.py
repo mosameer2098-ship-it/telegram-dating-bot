@@ -5,13 +5,23 @@ def discover_keyboard():
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("❤️ Like", callback_data="like"),
-                InlineKeyboardButton("❌ Pass", callback_data="pass"),
+                InlineKeyboardButton(
+                    "❤️ Like",
+                    callback_data="like",
+                ),
+                InlineKeyboardButton(
+                    "❌ Pass",
+                    callback_data="pass",
+                ),
             ],
             [
                 InlineKeyboardButton(
-                    "🚫 Report",
+                    "🚩 Report",
                     callback_data="report",
+                ),
+                InlineKeyboardButton(
+                    "🚫 Block",
+                    callback_data="block",
                 ),
             ],
         ]
