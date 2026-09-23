@@ -9,8 +9,11 @@ from telegram.ext import (
 
 from config import BOT_TOKEN
 from database import init_db
+
 from handlers.start import start_command
 from handlers.matching import discover_command
+from handlers.likes import handle_like, handle_pass
+
 from handlers.profile import (
     profile_start,
     get_name,
@@ -36,14 +39,32 @@ def main():
 
     app = Application.builder().token(BOT_TOKEN).build()
 
+    # Start
     app.add_handler(
         CommandHandler("start", start_command)
     )
 
+    # Discover
     app.add_handler(
         CommandHandler("discover", discover_command)
     )
 
+    # Like / Pass buttons
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_like,
+            pattern="^like$",
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_pass,
+            pattern="^pass$",
+        )
+    )
+
+    # Profile creation
     profile_handler = ConversationHandler(
         entry_points=[
             CommandHandler("profile", profile_start)
@@ -93,7 +114,10 @@ def main():
             ],
         },
         fallbacks=[
-            CommandHandler("cancel", cancel_profile)
+            CommandHandler(
+                "cancel",
+                cancel_profile,
+            )
         ],
     )
 
