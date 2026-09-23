@@ -14,6 +14,11 @@ from handlers.start import start_command
 from handlers.matching import discover_command
 from handlers.likes import handle_like, handle_pass
 from handlers.reports import handle_report, handle_block
+from handlers.chat import (
+    start_chat,
+    end_chat,
+    forward_chat_message,
+)
 
 from handlers.profile import (
     profile_start,
@@ -40,14 +45,18 @@ def main():
 
     app = Application.builder().token(BOT_TOKEN).build()
 
-    # Start
+    # Basic commands
     app.add_handler(
         CommandHandler("start", start_command)
     )
 
-    # Discover
     app.add_handler(
         CommandHandler("discover", discover_command)
+    )
+
+    # Chat commands
+    app.add_handler(
+        CommandHandler("endchat", end_chat)
     )
 
     # Like
@@ -79,6 +88,14 @@ def main():
         CallbackQueryHandler(
             handle_block,
             pattern="^block$",
+        )
+    )
+
+    # Start chat
+    app.add_handler(
+        CallbackQueryHandler(
+            start_chat,
+            pattern="^start_chat$",
         )
     )
 
@@ -143,6 +160,14 @@ def main():
     )
 
     app.add_handler(profile_handler)
+
+    # Chat messages
+    app.add_handler(
+        MessageHandler(
+            filters.ALL & ~filters.COMMAND,
+            forward_chat_message,
+        )
+    )
 
     print("LoveMatch bot is running...")
 
