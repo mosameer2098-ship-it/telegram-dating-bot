@@ -29,24 +29,13 @@ def get_discover_profile(
         SELECT *
         FROM users
         WHERE telegram_id != ?
-          AND telegram_id NOT IN (
-              SELECT blocked_id
-              FROM blocked_users
-              WHERE blocker_id = ?
-          )
-    """
 
-    params = [telegram_id, telegram_id]
+        AND telegram_id NOT IN (
+            SELECT blocked_id
+            FROM blocked_users
+            WHERE blocker_id = ?
+        )
 
-    if gender:
-        query += " AND gender = ?"
-        params.append(gender)
-
-    if city:
-        query += " AND city = ?"
-        params.append(city)
-
-    query += """
         AND telegram_id NOT IN (
             SELECT liked_id
             FROM likes
@@ -54,7 +43,25 @@ def get_discover_profile(
         )
     """
 
-    params.append(telegram_id)
+    params = [
+        telegram_id,
+        telegram_id,
+        telegram_id,
+    ]
+
+    # Candidate gender filter
+    if gender:
+        query += """
+            AND gender = ?
+        """
+        params.append(gender)
+
+    # City filter
+    if city:
+        query += """
+            AND city = ?
+        """
+        params.append(city)
 
     query += """
         ORDER BY RANDOM()
