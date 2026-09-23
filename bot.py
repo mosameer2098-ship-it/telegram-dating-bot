@@ -19,6 +19,11 @@ from handlers.chat import (
     end_chat,
     forward_chat_message,
 )
+from handlers.settings import (
+    settings_command,
+    show_my_profile,
+    delete_profile,
+)
 
 from handlers.profile import (
     profile_start,
@@ -46,20 +51,12 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
     # Basic commands
-    app.add_handler(
-        CommandHandler("start", start_command)
-    )
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(CommandHandler("discover", discover_command))
+    app.add_handler(CommandHandler("settings", settings_command))
+    app.add_handler(CommandHandler("endchat", end_chat))
 
-    app.add_handler(
-        CommandHandler("discover", discover_command)
-    )
-
-    # Chat commands
-    app.add_handler(
-        CommandHandler("endchat", end_chat)
-    )
-
-    # Like
+    # Dating buttons
     app.add_handler(
         CallbackQueryHandler(
             handle_like,
@@ -67,7 +64,6 @@ def main():
         )
     )
 
-    # Pass
     app.add_handler(
         CallbackQueryHandler(
             handle_pass,
@@ -75,7 +71,6 @@ def main():
         )
     )
 
-    # Report
     app.add_handler(
         CallbackQueryHandler(
             handle_report,
@@ -83,7 +78,6 @@ def main():
         )
     )
 
-    # Block
     app.add_handler(
         CallbackQueryHandler(
             handle_block,
@@ -91,7 +85,7 @@ def main():
         )
     )
 
-    # Start chat
+    # Match chat
     app.add_handler(
         CallbackQueryHandler(
             start_chat,
@@ -99,13 +93,25 @@ def main():
         )
     )
 
+    # Settings
+    app.add_handler(
+        CallbackQueryHandler(
+            show_my_profile,
+            pattern="^my_profile$",
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            delete_profile,
+            pattern="^delete_profile$",
+        )
+    )
+
     # Profile creation
     profile_handler = ConversationHandler(
         entry_points=[
-            CommandHandler(
-                "profile",
-                profile_start,
-            )
+            CommandHandler("profile", profile_start)
         ],
         states={
             NAME: [
