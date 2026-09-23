@@ -13,6 +13,7 @@ from database import init_db
 from handlers.start import start_command
 from handlers.matching import discover_command
 from handlers.likes import handle_like, handle_pass
+from handlers.reports import handle_report, handle_block
 
 from handlers.profile import (
     profile_start,
@@ -49,7 +50,7 @@ def main():
         CommandHandler("discover", discover_command)
     )
 
-    # Like / Pass buttons
+    # Like
     app.add_handler(
         CallbackQueryHandler(
             handle_like,
@@ -57,6 +58,7 @@ def main():
         )
     )
 
+    # Pass
     app.add_handler(
         CallbackQueryHandler(
             handle_pass,
@@ -64,10 +66,29 @@ def main():
         )
     )
 
+    # Report
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_report,
+            pattern="^report$",
+        )
+    )
+
+    # Block
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_block,
+            pattern="^block$",
+        )
+    )
+
     # Profile creation
     profile_handler = ConversationHandler(
         entry_points=[
-            CommandHandler("profile", profile_start)
+            CommandHandler(
+                "profile",
+                profile_start,
+            )
         ],
         states={
             NAME: [
