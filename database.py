@@ -84,6 +84,75 @@ def init_db():
         """
     )
 
+    # Blocked users
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS blocked_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            blocker_id INTEGER NOT NULL,
+            blocked_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(blocker_id, blocked_id)
+        )
+        """
+    )
+
+    # Reports
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reporter_id INTEGER NOT NULL,
+            reported_id INTEGER NOT NULL,
+            reason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # Indexes
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_likes_liker
+        ON likes(liker_id)
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_likes_liked
+        ON likes(liked_id)
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_matches_user1
+        ON matches(user1_id)
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_matches_user2
+        ON matches(user2_id)
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_blocked_blocker
+        ON blocked_users(blocker_id)
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_reports_reporter
+        ON reports(reporter_id)
+        """
+    )
+
     connection.commit()
     connection.close()
 
