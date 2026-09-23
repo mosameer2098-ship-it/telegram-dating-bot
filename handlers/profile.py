@@ -1,10 +1,10 @@
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ContextTypes, ConversationHandler
 
 from database import save_profile
 
 
-NAME, AGE, CITY, BIO = range(4)
+NAME, AGE, CITY, BIO, PHOTO, GENDER, INTERESTED_IN = range(7)
 
 
 async def profile_start(
@@ -14,7 +14,7 @@ async def profile_start(
     context.user_data.clear()
 
     await update.message.reply_text(
-        "👤 Let's create your profile!\n\n"
+        "👤 Let's create your dating profile!\n\n"
         "What should we call you?"
     )
 
@@ -59,7 +59,7 @@ async def get_age(
 
     if age < 18:
         await update.message.reply_text(
-            "❌ Sorry, LoveMatch is only available to adults (18+)."
+            "❌ LoveMatch is only available to users aged 18+."
         )
         context.user_data.clear()
         return ConversationHandler.END
@@ -115,6 +115,103 @@ async def get_bio(
 
     context.user_data["bio"] = bio
 
+    await update.message.reply_text(
+        "📸 Now send a profile photo.\n\n"
+        "Please use a photo you're comfortable sharing "
+        "with other LoveMatch users."
+    )
+
+    return PHOTO
+
+
+async def get_photo(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    if not update.message.photo:
+        await update.message.reply_text(
+            "📸 Please send an image as a photo."
+        )
+        return PHOTO
+
+    photo = update.message.photo[-1]
+
+    context.user_data["photo_file_id"] = photo.file_id
+
+    keyboard = ReplyKeyboardMarkup(
+        [
+            ["👨 Male", "👩 Female"],
+            ["⚪ Other"],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+    await update.message.reply_text(
+        "👤 What is your gender?",
+        reply_markup=keyboard,
+    )
+
+    return GENDER
+
+
+async def get_gender(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    gender_map = {
+        "👨 Male": "male",
+        "👩 Female": "female",
+        "⚪ Other": "other",
+    }
+
+    gender = gender_map.get(update.message.text)
+
+    if not gender:
+        await update.message.reply_text(
+            "Please choose one of the buttons."
+        )
+        return GENDER
+
+    context.user_data["gender"] = gender
+
+    keyboard = ReplyKeyboardMarkup(
+        [
+            ["👨 Men", "👩 Women"],
+            ["👥 Everyone"],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+    await update.message.reply_text(
+        "❤️ Who are you interested in?",
+        reply_markup=keyboard,
+    )
+
+    return INTERESTED_IN
+
+
+async def get_interested_in(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    interested_map = {
+        "👨 Men": "men",
+        "👩 Women": "women",
+        "👥 Everyone": "everyone",
+    }
+
+    interested_in = interested_map.get(update.message.text)
+
+    if not interested_in:
+        await update.message.reply_text(
+            "Please choose one of the buttons."
+        )
+        return INTERESTED_IN
+
+    context.user_data["interested_in"] = interested_in
+
     user = update.effective_user
 
     save_profile(
@@ -124,17 +221,23 @@ async def get_bio(
         age=context.user_data["age"],
         city=context.user_data["city"],
         bio=context.user_data["bio"],
+        photo_file_id=context.user_data["photo_file_id"],
+        gender=context.user_data["gender"],
+        interested_in=context.user_data["interested_in"],
     )
 
-    name = context.user_data["name"]
-    age = context.user_data["age"]
-    city = context.user_data["city"]
+    await update.message.reply_text(
+        "✅ Profile saved successfully!",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
     await update.message.reply_text(
-        "✅ Profile saved!\n\n"
-        f"👤 {name}, {age}\n"
-        f"📍 {city}\n\n"
-        "Your LoveMatch profile is ready. ❤️"
+        f"👤 {context.user_data['name']}, "
+        f"{context.user_data['age']}\n"
+        f"📍 {context.user_data['city']}\n"
+        f"⚧ Gender: {context.user_data['gender']}\n\n"
+        f"📝 {context.user_data['bio']}\n\n"
+        "❤️ Your LoveMatch profile is ready!"
     )
 
     context.user_data.clear()
@@ -149,7 +252,8 @@ async def cancel_profile(
     context.user_data.clear()
 
     await update.message.reply_text(
-        "❌ Profile creation cancelled."
+        "❌ Profile creation cancelled.",
+        reply_markup=ReplyKeyboardRemove(),
     )
 
     return ConversationHandler.END
