@@ -1,21 +1,68 @@
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import (
+    Update,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+)
 from telegram.ext import ContextTypes, ConversationHandler
 
 from database import save_profile
+from utils.i18n import get_text
 
 
 NAME, AGE, CITY, BIO, PHOTO, GENDER, INTERESTED_IN = range(7)
+
+
+def lang(context):
+    return context.user_data.get("language", "en")
+
+
+def text(context, key):
+    return get_text(key, lang(context))
+
+
+def photo_keyboard(context):
+    language = lang(context)
+
+    if language == "hi":
+        return ReplyKeyboardMarkup(
+            [
+                ["📷 Take Live Photo"],
+                ["🖼️ Choose from Gallery"],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+
+    if language == "bn":
+        return ReplyKeyboardMarkup(
+            [
+                ["📷 Live Photo নিন"],
+                ["🖼️ Gallery থেকে নিন"],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+
+    return ReplyKeyboardMarkup(
+        [
+            ["📷 Take Live Photo"],
+            ["🖼️ Choose from Gallery"],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
 
 
 async def profile_start(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
+    language = context.user_data.get("language", "en")
     context.user_data.clear()
+    context.user_data["language"] = language
 
     await update.message.reply_text(
-        "👤 Let's create your dating profile!\n\n"
-        "What should we call you?"
+        text(context, "profile_create")
     )
 
     return NAME
@@ -29,15 +76,14 @@ async def get_name(
 
     if not name:
         await update.message.reply_text(
-            "Please enter a valid name."
+            text(context, "profile_valid_name")
         )
         return NAME
 
     context.user_data["name"] = name
 
     await update.message.reply_text(
-        "🎂 How old are you?\n\n"
-        "LoveMatch is strictly for users aged 18+."
+        text(context, "profile_age")
     )
 
     return AGE
@@ -47,33 +93,33 @@ async def get_age(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-    text = update.message.text.strip()
+    value = update.message.text.strip()
 
-    if not text.isdigit():
+    if not value.isdigit():
         await update.message.reply_text(
-            "Please enter your age as a number."
+            text(context, "profile_valid_age")
         )
         return AGE
 
-    age = int(text)
+    age = int(value)
 
     if age < 18:
         await update.message.reply_text(
-            "❌ LoveMatch is only available to users aged 18+."
+            text(context, "profile_underage")
         )
         context.user_data.clear()
         return ConversationHandler.END
 
     if age > 100:
         await update.message.reply_text(
-            "Please enter a valid age."
+            text(context, "profile_invalid_age")
         )
         return AGE
 
     context.user_data["age"] = age
 
     await update.message.reply_text(
-        "📍 Which city do you live in?"
+        text(context, "profile_city")
     )
 
     return CITY
@@ -87,15 +133,14 @@ async def get_city(
 
     if not city:
         await update.message.reply_text(
-            "Please enter a valid city."
+            text(context, "profile_valid_city")
         )
         return CITY
 
     context.user_data["city"] = city
 
     await update.message.reply_text(
-        "📝 Tell us a little about yourself.\n\n"
-        "Keep it friendly and respectful."
+        text(context, "profile_bio")
     )
 
     return BIO
@@ -109,16 +154,16 @@ async def get_bio(
 
     if not bio:
         await update.message.reply_text(
-            "Please enter a short bio."
+            text(context, "profile_valid_bio")
         )
         return BIO
 
     context.user_data["bio"] = bio
 
     await update.message.reply_text(
-        "📸 Now send a profile photo.\n\n"
-        "Please use a photo you're comfortable sharing "
-        "with other LoveMatch users."
+        text(context, "profile_photo"),
+        reply_markup=photo_keyboard(context),
+        parse_mode="HTML",
     )
 
     return PHOTO
@@ -130,25 +175,24 @@ async def get_photo(
 ):
     if not update.message.photo:
         await update.message.reply_text(
-            "📸 Please send an image as a photo."
+            text(context, "profile_send_photo")
         )
         return PHOTO
 
     photo = update.message.photo[-1]
-
     context.user_data["photo_file_id"] = photo.file_id
 
     keyboard = ReplyKeyboardMarkup(
         [
-            ["👨 Male", "👩 Female"],
-            ["⚪ Other"],
+            [text(context, "gender_male"), text(context, "gender_female")],
+            [text(context, "gender_other")],
         ],
         resize_keyboard=True,
         one_time_keyboard=True,
     )
 
     await update.message.reply_text(
-        "👤 What is your gender?",
+        text(context, "profile_gender"),
         reply_markup=keyboard,
     )
 
@@ -160,16 +204,16 @@ async def get_gender(
     context: ContextTypes.DEFAULT_TYPE
 ):
     gender_map = {
-        "👨 Male": "male",
-        "👩 Female": "female",
-        "⚪ Other": "other",
+        text(context, "gender_male"): "male",
+        text(context, "gender_female"): "female",
+        text(context, "gender_other"): "other",
     }
 
     gender = gender_map.get(update.message.text)
 
     if not gender:
         await update.message.reply_text(
-            "Please choose one of the buttons."
+            text(context, "profile_choose_button")
         )
         return GENDER
 
@@ -177,15 +221,15 @@ async def get_gender(
 
     keyboard = ReplyKeyboardMarkup(
         [
-            ["👨 Men", "👩 Women"],
-            ["👥 Everyone"],
+            [text(context, "interested_men"), text(context, "interested_women")],
+            [text(context, "interested_everyone")],
         ],
         resize_keyboard=True,
         one_time_keyboard=True,
     )
 
     await update.message.reply_text(
-        "❤️ Who are you interested in?",
+        text(context, "profile_interested"),
         reply_markup=keyboard,
     )
 
@@ -197,16 +241,16 @@ async def get_interested_in(
     context: ContextTypes.DEFAULT_TYPE
 ):
     interested_map = {
-        "👨 Men": "men",
-        "👩 Women": "women",
-        "👥 Everyone": "everyone",
+        text(context, "interested_men"): "men",
+        text(context, "interested_women"): "women",
+        text(context, "interested_everyone"): "everyone",
     }
 
     interested_in = interested_map.get(update.message.text)
 
     if not interested_in:
         await update.message.reply_text(
-            "Please choose one of the buttons."
+            text(context, "profile_choose_button")
         )
         return INTERESTED_IN
 
@@ -224,10 +268,11 @@ async def get_interested_in(
         photo_file_id=context.user_data["photo_file_id"],
         gender=context.user_data["gender"],
         interested_in=context.user_data["interested_in"],
+        language=context.user_data.get("language", "en"),
     )
 
     await update.message.reply_text(
-        "✅ Profile saved successfully!",
+        text(context, "profile_saved"),
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -235,9 +280,9 @@ async def get_interested_in(
         f"👤 {context.user_data['name']}, "
         f"{context.user_data['age']}\n"
         f"📍 {context.user_data['city']}\n"
-        f"⚧ Gender: {context.user_data['gender']}\n\n"
+        f"⚧ {context.user_data['gender']}\n\n"
         f"📝 {context.user_data['bio']}\n\n"
-        "❤️ Your LoveMatch profile is ready!"
+        + text(context, "profile_ready")
     )
 
     context.user_data.clear()
@@ -252,7 +297,7 @@ async def cancel_profile(
     context.user_data.clear()
 
     await update.message.reply_text(
-        "❌ Profile creation cancelled.",
+        text(context, "profile_cancelled"),
         reply_markup=ReplyKeyboardRemove(),
     )
 

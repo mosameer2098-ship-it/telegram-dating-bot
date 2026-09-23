@@ -19,6 +19,12 @@ def settings_keyboard():
                     callback_data="delete_profile",
                 )
             ],
+            [
+                InlineKeyboardButton(
+                    "⬅️ Back",
+                    callback_data="welcome_back",
+                )
+            ],
         ]
     )
 

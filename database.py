@@ -50,6 +50,9 @@ def init_db():
         "photo_file_id": "TEXT",
         "gender": "TEXT",
         "interested_in": "TEXT",
+        "language": "TEXT DEFAULT 'en'",
+        "is_premium": "INTEGER DEFAULT 0",
+        "premium_until": "TIMESTAMP",
     }
 
     for column, column_type in new_columns.items():
@@ -57,6 +60,23 @@ def init_db():
             connection.execute(
                 f"ALTER TABLE users ADD COLUMN {column} {column_type}"
             )
+
+    # App settings
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+        """
+    )
+
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO app_settings (key, value)
+        VALUES ('premium_mode', 'free')
+        """
+    )
 
     # Likes
     connection.execute(
@@ -157,6 +177,42 @@ def init_db():
     connection.close()
 
 
+def set_user_language(telegram_id, language):
+    connection = get_connection()
+
+    connection.execute(
+        """
+        UPDATE users
+        SET language = ?
+        WHERE telegram_id = ?
+        """,
+        (language, telegram_id),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def get_user_language(telegram_id):
+    connection = get_connection()
+
+    row = connection.execute(
+        """
+        SELECT language
+        FROM users
+        WHERE telegram_id = ?
+        """,
+        (telegram_id,),
+    ).fetchone()
+
+    connection.close()
+
+    if not row or not row["language"]:
+        return "en"
+
+    return row["language"]
+
+
 def save_profile(
     telegram_id,
     username,
@@ -167,6 +223,7 @@ def save_profile(
     photo_file_id=None,
     gender=None,
     interested_in=None,
+    language="en",
 ):
     connection = get_connection()
 
@@ -181,9 +238,10 @@ def save_profile(
             bio,
             photo_file_id,
             gender,
-            interested_in
+            interested_in,
+            language
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         ON CONFLICT(telegram_id)
         DO UPDATE SET
@@ -194,7 +252,8 @@ def save_profile(
             bio = excluded.bio,
             photo_file_id = excluded.photo_file_id,
             gender = excluded.gender,
-            interested_in = excluded.interested_in
+            interested_in = excluded.interested_in,
+            language = excluded.language
         """,
         (
             telegram_id,
@@ -206,6 +265,7 @@ def save_profile(
             photo_file_id,
             gender,
             interested_in,
+            language,
         ),
     )
 
