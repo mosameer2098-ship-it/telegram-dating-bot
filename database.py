@@ -1,4 +1,3 @@
-
 import sqlite3
 from pathlib import Path
 
@@ -30,10 +29,33 @@ def init_db():
             age INTEGER NOT NULL,
             city TEXT NOT NULL,
             bio TEXT,
+            photo_file_id TEXT,
+            gender TEXT,
+            interested_in TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
+
+    # Add new columns to an existing database if they don't exist.
+    columns = {
+        row["name"]
+        for row in connection.execute(
+            "PRAGMA table_info(users)"
+        ).fetchall()
+    }
+
+    new_columns = {
+        "photo_file_id": "TEXT",
+        "gender": "TEXT",
+        "interested_in": "TEXT",
+    }
+
+    for column, column_type in new_columns.items():
+        if column not in columns:
+            connection.execute(
+                f"ALTER TABLE users ADD COLUMN {column} {column_type}"
+            )
 
     connection.commit()
     connection.close()
@@ -46,6 +68,9 @@ def save_profile(
     age,
     city,
     bio,
+    photo_file_id=None,
+    gender=None,
+    interested_in=None,
 ):
     connection = get_connection()
 
@@ -57,16 +82,22 @@ def save_profile(
             name,
             age,
             city,
-            bio
+            bio,
+            photo_file_id,
+            gender,
+            interested_in
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(telegram_id)
         DO UPDATE SET
             username = excluded.username,
             name = excluded.name,
             age = excluded.age,
             city = excluded.city,
-            bio = excluded.bio
+            bio = excluded.bio,
+            photo_file_id = excluded.photo_file_id,
+            gender = excluded.gender,
+            interested_in = excluded.interested_in
         """,
         (
             telegram_id,
@@ -75,6 +106,9 @@ def save_profile(
             age,
             city,
             bio,
+            photo_file_id,
+            gender,
+            interested_in,
         ),
     )
 
