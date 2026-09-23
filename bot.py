@@ -3,12 +3,14 @@ from telegram.ext import (
     CommandHandler,
     ConversationHandler,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
 )
 
 from config import BOT_TOKEN
 from database import init_db
 from handlers.start import start_command
+from handlers.matching import discover_command
 from handlers.profile import (
     profile_start,
     get_name,
@@ -36,6 +38,10 @@ def main():
 
     app.add_handler(
         CommandHandler("start", start_command)
+    )
+
+    app.add_handler(
+        CommandHandler("discover", discover_command)
     )
 
     profile_handler = ConversationHandler(
