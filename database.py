@@ -19,6 +19,7 @@ def get_connection():
 def init_db():
     connection = get_connection()
 
+    # Users
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
@@ -37,7 +38,7 @@ def init_db():
         """
     )
 
-    # Add new columns to an existing database if they don't exist.
+    # Add new columns to old databases
     columns = {
         row["name"]
         for row in connection.execute(
@@ -56,6 +57,32 @@ def init_db():
             connection.execute(
                 f"ALTER TABLE users ADD COLUMN {column} {column_type}"
             )
+
+    # Likes
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS likes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            liker_id INTEGER NOT NULL,
+            liked_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(liker_id, liked_id)
+        )
+        """
+    )
+
+    # Matches
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS matches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user1_id INTEGER NOT NULL,
+            user2_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user1_id, user2_id)
+        )
+        """
+    )
 
     connection.commit()
     connection.close()
@@ -88,6 +115,7 @@ def save_profile(
             interested_in
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
         ON CONFLICT(telegram_id)
         DO UPDATE SET
             username = excluded.username,
