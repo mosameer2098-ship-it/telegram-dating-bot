@@ -70,6 +70,14 @@ def get_random_welcome_photo():
 
 
 def welcome_text(language="en"):
+    if language == "hinglish":
+        return (
+            "💖 <b>Welcome to LoveMatch!</b>\n\n"
+            "Yahan aap naye logon se connect kar sakte ho, "
+            "profiles discover kar sakte ho aur meaningful matches bana sakte ho.\n\n"
+            "✨ Apna profile complete karo aur apni love journey start karo!"
+        )
+
     if language == "hi":
         return (
             "❤️ <b>LoveMatch में आपका स्वागत है!</b>\n\n"
@@ -118,17 +126,14 @@ async def start_command(
     if photo:
         with photo.open("rb") as image:
             await update.message.reply_photo(
-                photo=image,
-                caption=welcome_text(language),
-                reply_markup=main_dashboard(language),
-                parse_mode="HTML",
+                photo=image
             )
-    else:
-        await update.message.reply_text(
-            welcome_text(language),
-            reply_markup=main_dashboard(language),
-            parse_mode="HTML",
-        )
+
+    await update.message.reply_text(
+        welcome_text(language),
+        reply_markup=main_dashboard(language),
+        parse_mode="HTML",
+    )
 
 
 async def language_command(

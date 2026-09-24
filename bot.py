@@ -23,14 +23,27 @@ from handlers.matching import (
     discover_callback,
 )
 from handlers.likes import handle_like, handle_pass
+from handlers.advanced_actions import (
+    handle_super_like,
+    handle_rewind,
+)
 from handlers.reports import handle_report, handle_block
+from handlers.matches import (
+    view_match,
+    unmatch,
+)
 from handlers.chat import (
     start_chat,
     end_chat,
     forward_chat_message,
 )
+from handlers.notifications import (
+    notifications_dashboard,
+    notifications_mark_all_read,
+)
 from handlers.settings import (
     settings_command,
+    settings_callback,
     show_my_profile,
     delete_profile,
 )
@@ -39,6 +52,7 @@ from handlers.premium import (
     premium_dashboard,
     premium_status,
     premium_plans,
+    premium_features,
 )
 
 from handlers.admin_premium import (
@@ -87,6 +101,22 @@ def main():
     # Welcome Dashboard
     app.add_handler(
         CallbackQueryHandler(
+        view_match,
+        pattern=r"^view_match$",
+    ),
+    CallbackQueryHandler(
+        unmatch,
+        pattern=r"^unmatch$",
+    ),
+    CallbackQueryHandler(
+        notifications_dashboard,
+        pattern=r"^notifications$",
+    ),
+    CallbackQueryHandler(
+        notifications_mark_all_read,
+        pattern=r"^notifications_mark_all$",
+    ),
+    CallbackQueryHandler(
             safety_info,
             pattern=r"^safety_info$",
         )
@@ -115,7 +145,7 @@ def main():
     )
     app.add_handler(
         CallbackQueryHandler(
-            settings_command,
+            settings_callback,
             pattern=r"^settings$",
         )
     )
@@ -141,6 +171,21 @@ def main():
         CallbackQueryHandler(
             handle_pass,
             pattern="^pass$",
+        )
+    )
+
+    # Ultra Pro Dating Actions
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_super_like,
+            pattern="^super_like$",
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_rewind,
+            pattern="^rewind$",
         )
     )
 
@@ -185,6 +230,13 @@ def main():
         CallbackQueryHandler(
             premium_plans,
             pattern=r"^premium_plans$",
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            premium_features,
+            pattern=r"^premium_features$",
         )
     )
     app.add_handler(

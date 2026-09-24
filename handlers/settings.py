@@ -133,3 +133,17 @@ async def delete_profile(
         "🗑️ Your LoveMatch profile has been deleted.\n\n"
         "You can create a new profile anytime with /profile."
     )
+
+
+async def settings_callback(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_text(
+        "⚙️ <b>LoveMatch Settings</b>",
+        reply_markup=settings_keyboard(),
+        parse_mode="HTML",
+    )
