@@ -254,8 +254,16 @@ async def generate_promo() -> str:
 
 def all_users_for_broadcast():
     conn=get_connection()
-    rows=conn.execute("SELECT telegram_id FROM users WHERE telegram_id IS NOT NULL").fetchall()
-    conn.close(); return [int(r[0]) for r in rows]
+    rows=conn.execute("""
+        SELECT u.telegram_id
+        FROM users u
+        LEFT JOIN user_notification_preferences p
+          ON p.telegram_id = u.telegram_id
+        WHERE u.telegram_id IS NOT NULL
+          AND COALESCE(p.promotions, 1) = 1
+    """).fetchall()
+    conn.close()
+    return [int(r[0]) for r in rows]
 
 
 def create_broadcast(message: str) -> int:
