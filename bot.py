@@ -168,6 +168,7 @@ from handlers.pro_features import (
     pro_achievements, pro_viewers, pro_notifications, notif_toggle,
     admin_dashboard, admin_broadcast_toggle, admin_ban, admin_unban,
     admin_reports, admin_users, admin_flag, translate_command,
+    admin_upload_welcome_photo, receive_welcome_photo,
 )
 from jobs.pro_jobs import hourly_ai_broadcast_loop
 
@@ -227,6 +228,8 @@ def main():
     app.add_handler(CommandHandler("admin_reports", admin_reports))
     app.add_handler(CommandHandler("admin_users", admin_users))
     app.add_handler(CommandHandler("admin_flag", admin_flag))
+    app.add_handler(CallbackQueryHandler(admin_upload_welcome_photo, pattern=r"^admin_upload_welcome_photo$"))
+    app.add_handler(MessageHandler(filters.PHOTO, receive_welcome_photo))
 
     app.add_handler(
         CallbackQueryHandler(

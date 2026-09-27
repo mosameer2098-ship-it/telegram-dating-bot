@@ -7,6 +7,7 @@ from utils.i18n import get_text, get_language_name
 from database import get_user_language, set_user_language
 
 
+from services.pro_features import get_random_welcome_photo_file_id
 def language_keyboard():
     return InlineKeyboardMarkup(
         [
@@ -145,13 +146,20 @@ async def start_command(
 
     context.user_data["language"] = language
 
-    photo = get_random_welcome_photo()
+    welcome_file_id = get_random_welcome_photo_file_id()
 
-    if photo:
-        with photo.open("rb") as image:
-            await update.message.reply_photo(
-                photo=image
-            )
+    if welcome_file_id:
+        await update.message.reply_photo(
+            photo=welcome_file_id
+        )
+    else:
+        photo = get_random_welcome_photo()
+
+        if photo:
+            with photo.open("rb") as image:
+                await update.message.reply_photo(
+                    photo=image
+                )
 
     await update.message.reply_text(
         welcome_text(language),

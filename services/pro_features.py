@@ -276,3 +276,37 @@ def finish_broadcast(bid, sent, failed):
 
 def record_delivery(bid, uid, status):
     conn=get_connection(); conn.execute("INSERT OR IGNORE INTO ai_broadcast_deliveries(broadcast_id,telegram_id,status) VALUES(?,?,?)",(bid,uid,status)); conn.commit(); conn.close()
+
+def add_welcome_photo(file_id: str, admin_id: int) -> bool:
+    conn = get_connection()
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO welcome_photos(file_id, uploaded_by) VALUES(?, ?)",
+            (file_id, admin_id),
+        )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+def get_random_welcome_photo_file_id() -> Optional[str]:
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT file_id FROM welcome_photos WHERE active=1 ORDER BY RANDOM() LIMIT 1"
+        ).fetchone()
+        return str(row["file_id"]) if row else None
+    finally:
+        conn.close()
+
+
+def get_welcome_photo_count() -> int:
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS total FROM welcome_photos WHERE active=1"
+        ).fetchone()
+        return int(row["total"])
+    finally:
+        conn.close()

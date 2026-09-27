@@ -187,6 +187,19 @@ def init_db():
                 if "duplicate column name" not in str(exc).lower():
                     raise
 
+    # Admin welcome photos
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS welcome_photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id TEXT NOT NULL UNIQUE,
+            uploaded_by INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            active INTEGER DEFAULT 1
+        )
+        """
+    )
+
     connection.commit()
     connection.close()
 

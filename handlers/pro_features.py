@@ -1,11 +1,12 @@
 import html
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, MessageHandler, filters
 from config import ADMIN_ID
 from services.pro_features import (
     notification_prefs, toggle_notification_pref, get_viewers, trending_profiles,
     recommendations, get_compatibility, user_achievements, ACHIEVEMENTS,
     set_flag, get_flag, is_banned, set_ban, remove_ban, evaluate_achievements,
+    add_welcome_photo, get_welcome_photo_count,
 )
 
 
@@ -75,7 +76,15 @@ async def admin_dashboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
     from database import get_connection
     c=get_connection(); users=c.execute("SELECT COUNT(*) FROM users").fetchone()[0]; matches=c.execute("SELECT COUNT(*) FROM matches").fetchone()[0]; premium=c.execute("SELECT COUNT(*) FROM users WHERE is_premium=1").fetchone()[0]; reports=c.execute("SELECT COUNT(*) FROM reports").fetchone()[0]; c.close()
-    await update.message.reply_text(f"🛠 <b>Admin Dashboard</b>\n\n👥 Users: {users}\n💞 Matches: {matches}\n⭐ Premium: {premium}\n🚩 Reports: {reports}\n📢 AI Broadcast: {'ON' if get_flag('ai_broadcast_enabled') else 'OFF'}\n\n/admin_broadcast_on\n/admin_broadcast_off\n/admin_ban USER_ID [reason]\n/admin_unban USER_ID",parse_mode="HTML")
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🖼️ Upload Welcome Photo", callback_data="admin_upload_welcome_photo")],
+    ])
+    count = get_welcome_photo_count()
+    await update.message.reply_text(
+        f"🛠 <b>Admin Dashboard</b>\n\n👥 Users: {users}\n💞 Matches: {matches}\n⭐ Premium: {premium}\n🚩 Reports: {reports}\n📢 AI Broadcast: {'ON' if get_flag('ai_broadcast_enabled') else 'OFF'}\n🖼️ Welcome Photos: {count}\n\n/admin_broadcast_on\n/admin_broadcast_off\n/admin_ban USER_ID [reason]\n/admin_unban USER_ID",
+        reply_markup=kb,
+        parse_mode="HTML",
+    )
 
 async def admin_broadcast_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
@@ -129,3 +138,46 @@ async def admin_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     key=context.args[0]; value=context.args[1].lower() in ("on","1","true","yes")
     set_flag(key,value)
     await update.message.reply_text(f"Feature flag <code>{html.escape(key)}</code>: {'ON' if value else 'OFF'}",parse_mode="HTML")
+
+async def admin_upload_welcome_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if q.from_user.id != ADMIN_ID:
+        await q.answer()
+        return
+
+    await q.answer()
+    context.user_data["waiting_welcome_photo"] = True
+    await q.message.reply_text(
+        "🖼️ <b>Upload Welcome Photo</b>\n\n"
+        "Ab photo bhejo.\n"
+        "Photo save hone ke baad ye `/start` par users ko random welcome photo ke roop mein dikh sakti hai.\n\n"
+        "♾️ Unlimited photos supported.",
+        parse_mode="HTML",
+    )
+
+
+async def receive_welcome_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    if not context.user_data.get("waiting_welcome_photo"):
+        return
+
+    if not update.message or not update.message.photo:
+        await update.message.reply_text("❌ Please send an image/photo.")
+        return
+
+    file_id = update.message.photo[-1].file_id
+
+    if add_welcome_photo(file_id, ADMIN_ID):
+        count = get_welcome_photo_count()
+        await update.message.reply_text(
+            f"✅ <b>Welcome photo saved!</b>\n\n"
+            f"🖼️ Total active welcome photos: {count}\n\n"
+            f"Another photo bhej sakte ho — unlimited supported.",
+            parse_mode="HTML",
+        )
+    else:
+        await update.message.reply_text("❌ Photo save nahi ho payi.")
+
+    context.user_data["waiting_welcome_photo"] = False
