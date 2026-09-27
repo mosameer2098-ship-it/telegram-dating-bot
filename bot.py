@@ -278,7 +278,7 @@ def main():
     app.add_handler(
         CallbackQueryHandler(
             notifications_mark_all_read,
-            pattern=r"^notifications_mark_all$",
+            pattern=r"^notifications_read_all$",
         )
     )
 
@@ -464,6 +464,12 @@ def main():
         CallbackQueryHandler(
             verification_menu,
             pattern=r"^verification$",
+        )
+    )
+    app.add_handler(
+        CallbackQueryHandler(
+            welcome_back,
+            pattern=r"^verification_back$",
         )
     )
 

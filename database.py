@@ -105,6 +105,12 @@ def init_db():
         """
     )
 
+    # Ensure matches.status exists for active-match queries
+    try:
+        connection.execute("ALTER TABLE matches ADD COLUMN status TEXT DEFAULT 'active'")
+    except Exception:
+        pass
+
     # Blocked users
     connection.execute(
         """
@@ -186,6 +192,19 @@ def init_db():
                 # is encountered; migrations are designed to be idempotent.
                 if "duplicate column name" not in str(exc).lower():
                     raise
+
+    # Profile verifications
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS profile_verifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER NOT NULL,
+            photo_file_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'verified',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
 
     # Admin welcome photos
     connection.execute(
